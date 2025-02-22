@@ -61,12 +61,21 @@ int main(int argc, char const *argv[]) {
 
     //validity checks and initial values
 
-    if (argc < 9) {return -1;}
+    if(argc < 9){
+        perror("Missing arguments");
+        return -1;
+    }
 
     int k = atoi(argv[2]);
-    if (k > 10000) {return -1;}
+    if(k > 10000){
+        perror("Too many output numbers");
+        return -1;
+    }
     int n = atoi(argv[4]);
-    if (n > 20) {return -1;}
+    if(n > 20){
+        perror("Too many processes");
+        return -1;
+    }
     char *input_file = (char *)argv[6];
     char *output_file = (char *)argv[8];
 
