@@ -11,7 +11,7 @@
 
 #define SNAME "shared_mem"
 
-void find_k_largest_in_file(const char *filename, int k, long* mem, int index) {
+void find_k_largest_in_file(const char *filename, int k, int n, int index) {
 
     FILE *file = fopen(filename, "r");
     if (file == NULL) {return;}
@@ -23,7 +23,13 @@ void find_k_largest_in_file(const char *filename, int k, long* mem, int index) {
     for (int i = 0; i < k; i++){
         largest[i] = -1;
     }
-    
+    int shm_fd = shm_open(SNAME, O_CREAT | O_RDWR, 0666);
+    if (shm_fd == -1) {return;}
+
+    const int SIZE = sizeof(long) * k * n;
+
+    long *shared_memory = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (shared_memory == MAP_FAILED) {return;}
 
     while (fscanf(file, "%ld", &num) != EOF) {
         if (count < k) {
@@ -44,8 +50,9 @@ void find_k_largest_in_file(const char *filename, int k, long* mem, int index) {
     fclose(file);
 
     for (int i = 0; i < k; i++) {
-        mem[index * k + i] = largest[i];
+        shared_memory[index * k + i] = largest[i];
     }
+    shm_unlink(SNAME);
     free(largest);
 }
 
@@ -99,7 +106,7 @@ int main(int argc, char const *argv[]) {
     char inter_file_names[n][20];
 
     for (int i = 0; i < n; i++) {
-        sprintf(inter_file_names[i], "inter%d.txt", i);
+        sprintf(inter_file_names[i], "inter%d.txt", i+1);
         inter_files[i] = fopen(inter_file_names[i], "w");
     }
 
@@ -124,7 +131,7 @@ int main(int argc, char const *argv[]) {
         if (pid < 0) {
             exit(-1);
         } else if (pid == 0) { // child
-            find_k_largest_in_file(inter_file_names[i], k, shared_memory, i);
+            find_k_largest_in_file(inter_file_names[i], k, n, i);
             exit(0);
         }
     }
